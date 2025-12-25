@@ -1,0 +1,57 @@
+name: 🤖 Run 24/7 Signal Bot
+
+on:
+  # هر ۵ دقیقه اجرا شود
+  schedule:
+    - cron: '*/5 * * * *'
+  
+  # امکان اجرای دستی از تب Actions
+  workflow_dispatch:
+  
+  # با هر تغییر در کد هم اجرا شود
+  push:
+    branches: [ main ]
+
+jobs:
+  run-signal-bot:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # مرحله ۱: دریافت کدها
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v3
+    
+    # مرحله ۲: نصب پایتون
+    - name: 🐍 Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    # مرحله ۳: نصب کتابخانه‌ها
+    - name: 📦 Install dependencies
+      run: pip install -r requirements.txt
+    
+    # مرحله ۴: اجرای ربات اصلی
+    - name: 🤖 Run Main Bot Script
+      run: python nattaj_bot.py
+      env:
+        # توکن تلگرام از Secrets گرفته می‌شود (بعداً تنظیم می‌کنیم)
+        TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+    
+    # مرحله ۵: آپلود لاگ‌ها به عنوان artifact (برای دیباگ)
+    - name: 💾 Upload Logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: bot-logs
+        path: |
+          bot_log.txt
+          user_state.json
+        retention-days: 1
+    
+    # مرحله ۶: نمایش وضعیت اجرا
+    - name: 📝 Execution Status
+      run: |
+        echo "✅ ربات در تاریخ $(date) اجرا شد"
+        echo "🕒 ساعت ایران: $(TZ='Asia/Tehran' date '+%Y-%m-%d %H:%M:%S')"
+        echo "🔁 اجرای بعدی: ۵ دقیقه دیگر"
